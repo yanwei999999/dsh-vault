@@ -1,5 +1,5 @@
 // dsh-vault 本机管理页（由 host 插件在 /vault 提供，仅 127.0.0.1 回环可访问）。
-export const PAGE_HTML = `<!DOCTYPE html>
+export const PAGE_HTML = String.raw`<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
@@ -84,11 +84,24 @@ function renderEntries(names) {
   for (const name of names) {
     const row = document.createElement('div');
     row.className = 'entry';
+    row.dataset.name = name;
     row.innerHTML = '<span><b>' + esc(name) + '</b></span>' +
-      '<span><button class="ghost" onclick="showEntry(\'' + escAttr(name) + '\')">查看</button>' +
-      '<button class="ghost danger" onclick="removeEntry(\'' + escAttr(name) + '\')">删除</button></span>';
+      '<span><button class="ghost" data-action="view">查看</button>' +
+      '<button class="ghost danger" data-action="remove">删除</button></span>';
     box.appendChild(row);
   }
+}
+function bindActions() {
+  const box = $('entries');
+  box.addEventListener('click', async (ev) => {
+    const btn = ev.target && ev.target.closest && ev.target.closest('button[data-action]');
+    if (!btn) return;
+    const row = btn.closest('.entry');
+    const name = row ? row.dataset.name : '';
+    const action = btn.getAttribute('data-action');
+    if (action === 'view') await showEntry(name);
+    else if (action === 'remove') await removeEntry(name);
+  });
 }
 async function showEntry(name) {
   const r = await api('get', { name });
@@ -116,7 +129,7 @@ async function addEntry() {
   status();
 }
 function esc(s){ return String(s).replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
-function escAttr(s){ return String(s).replace(/['"]/g, ''); }
+bindActions();
 status();
 </script>
 </body>
