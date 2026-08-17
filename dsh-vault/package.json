@@ -21,6 +21,7 @@
     "bin",
     "cordis.patch.yml",
     "README.md",
+    "SECURITY.md",
     "LICENSE"
   ],
   "engines": {

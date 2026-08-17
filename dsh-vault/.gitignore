@@ -2,3 +2,11 @@ node_modules/
 package-lock.json
 *.log
 .DS_Store
+
+# ---- 保险库数据：绝不进仓库（无论你执行哪一行，都可能把它带到某级目录）----
+# 这些是真实凭据密文与本机绑定密钥，任何一级都不应被 git 追踪。
+vault.json
+machine.key
+vault/
+*.vault
+.credentials.yaml

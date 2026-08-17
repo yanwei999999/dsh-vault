@@ -59,6 +59,10 @@ dsh-vault status              # 保险库状态（不需要密码）
 3. agent 调用 `vault_get github` → 发现已锁定 → 让你到 <http://127.0.0.1:3080/vault> 解锁。
 4. 你解锁后，agent 重试 `vault_get github` → 拿到账号密码帮你操作。
 
+## 安全边界
+
+详见 [`SECURITY.md`](./SECURITY.md)：保护点、明确不防御什么、以及「上传到 GitHub 不会泄露真实凭据」的说明。
+
 ## License
 
 [MIT](./LICENSE)

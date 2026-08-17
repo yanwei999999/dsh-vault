@@ -1,0 +1,8 @@
+# baomi 仓库级 .gitignore：任何子目录的保险库数据都不跟踪。
+# 目录级已忽略；这里兜底，防止仓库根被误当作 DSH_HOME。
+vault.json
+machine.key
+vault/
+*.vault
+.credentials.yaml
+node_modules/

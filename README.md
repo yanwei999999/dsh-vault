@@ -12,9 +12,9 @@
 - 只有**这台电脑**且输入**主密码**才能打开，重启 dsh 后自动重新锁定；
 - 解锁后，dsh 里的 agent 可经工具 `vault_status` / `vault_list` / `vault_get` 直接读取凭据；
 - 附带本机管理页（`/vault`）与命令行工具 `dsh-vault`；
-- 详细说明见 [`dsh-vault/README.md`](./dsh-vault/README.md)。
+- 详细说明见 [`dsh-vault/README.md`](./dsh-vault/README.md)，安全边界见 [`dsh-vault/SECURITY.md`](./dsh-vault/SECURITY.md)。
 
-> 提示：插件源码在 `dsh-vault/`；`node_modules` 不纳入版本管理，安装时用
+> 提示：插件源码在 `dsh-vault/`；`node_modules` 与保险库数据（`vault.json` / `machine.key`）**绝不进仓库**，安装时用
 > `dsh plugin --profile web add` 从本目录链接，或发布成 npm 包后安装。
 
 ## License
