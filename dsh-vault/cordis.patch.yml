@@ -1,0 +1,6 @@
+# dsh-vault bundle layer: inserts the vault plugin row into the profile roster.
+# Install with: dsh plugin --profile web add <this-dir-or-github-url>
+# Then restart dsh web. Unlock at http://127.0.0.1:3080/vault
+- insert:
+    - id: dsh-vault
+      name: dsh-vault

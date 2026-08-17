@@ -1,0 +1,53 @@
+{
+  "name": "dsh-vault",
+  "version": "1.0.0",
+  "description": "本机加密账号密码保险库（DeepSeek Harness / dsh 插件）：AES-256-GCM + 主密码 + 本机绑定；解锁后 dsh 里的 agent 可通过工具直接读取凭据。",
+  "type": "module",
+  "main": "lib/index.js",
+  "bin": {
+    "dsh-vault": "./bin/dsh-vault.mjs"
+  },
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "files": [
+    "lib",
+    "bin",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "yanwei999999",
+    "email": "yanwei999999@163.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yanwei999999/dsh-vault.git"
+  },
+  "homepage": "https://github.com/yanwei999999/dsh-vault",
+  "bugs": {
+    "url": "https://github.com/yanwei999999/dsh-vault/issues"
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "cordis",
+    "plugin",
+    "password",
+    "vault",
+    "encryption",
+    "credentials",
+    "secret"
+  ]
+}
