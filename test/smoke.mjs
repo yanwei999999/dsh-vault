@@ -5,7 +5,18 @@ import assert from "node:assert/strict";
 import { existsSync, mkdtempSync, readFileSync, rmSync, copyFileSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createVault, unlockVault, encryptWithKey, writeVault, vaultDir, machineKeyPath } from "../lib/vault-core.mjs";
+import {
+  createVault,
+  unlockVault,
+  encryptWithKey,
+  writeVault,
+  vaultDir,
+  machineKeyPath,
+  setAutoUnlockKey,
+  clearAutoUnlockKey,
+  loadAutoUnlockKey,
+  unlockVaultWithKey,
+} from "../lib/vault-core.mjs";
 
 const MASTER = "test-master-password-2026";
 const PASS = "super-secret-pass-xyz";
@@ -42,8 +53,8 @@ const { apply } = await import("../lib/index.js");
 apply(fakeCtx);
 
 const toolNames = registeredTools.map((t) => t.name).sort();
-assert.deepEqual(toolNames, ["vault_get", "vault_list", "vault_status"]);
-console.log("✔ 插件注册了 3 个 agent 工具：", toolNames.join(", "));
+assert.deepEqual(toolNames, ["vault_add", "vault_autounlock", "vault_get", "vault_list", "vault_status"]);
+console.log("✔ 插件注册了 " + toolNames.length + " 个 agent 工具：", toolNames.join(", "));
 
 const routePaths = registeredRoutes.map((r) => r.path).sort();
 assert.ok(routePaths.includes("/vault"));
@@ -111,6 +122,38 @@ const home2 = mkdtempSync(join(tmpdir(), "dsh-vault-test2-"));
   process.env.DSH_HOME = home2;
   assert.throws(() => unlockVault(MASTER), /machine\.key|密钥文件/);
   console.log("✔ 本机绑定生效：只有 vault.json 的其它电脑，即使有主密码也打不开");
+}
+
+// ---- 自动解锁（auto.key）----
+process.env.DSH_HOME = home;
+assert.equal(loadAutoUnlockKey(), null, "初始应未开启自动解锁");
+const autoKeyPath = setAutoUnlockKey(MASTER);
+assert.ok(existsSync(autoKeyPath), "开启后应生成 auto.key");
+assert.equal(autoKeyPath, join(vaultDir(), "auto.key"));
+assert.ok(Buffer.isBuffer(loadAutoUnlockKey()), "auto.key 内容应是派生主密钥 Buffer");
+// 用 auto.key 直接解锁应能拿到条目
+const { names: autoNames } = unlockVaultWithKey(loadAutoUnlockKey());
+assert.deepEqual([...autoNames.keys()], ["github"]);
+console.log("✔ 自动解锁：setAutoUnlockKey 生成 auto.key，unlockVaultWithKey 直接解锁读到条目");
+// 关闭自动解锁
+assert.equal(clearAutoUnlockKey(), true);
+assert.equal(loadAutoUnlockKey(), null, "关闭后应删除 auto.key");
+console.log("✔ 自动解锁：clearAutoUnlockKey 删除 auto.key，恢复手动解锁");
+
+// ---- agent 工具 vault_autounlock ----
+{
+  const tool = registeredTools.find((t) => t.name === "vault_autounlock");
+  const on = await tool.execute({ action: "on", password: MASTER });
+  assert.ok(on.content.includes("已开启自动解锁"), "应开启成功：" + on.content);
+  assert.ok(existsSync(autoKeyPath), "开启后 auto.key 应存在");
+  // 开启后本次会话已解锁，vault_get 应能读到
+  const getTool = registeredTools.find((t) => t.name === "vault_get");
+  const got = await getTool.execute({ name: "github" });
+  assert.ok(got.content.includes(PASS), "开启自动解锁后应已解锁并能读密码");
+  const off = await tool.execute({ action: "off" });
+  assert.ok(off.content.includes("已关闭自动解锁"));
+  assert.equal(loadAutoUnlockKey(), null, "关闭后 auto.key 应删除");
+  console.log("✔ agent 工具 vault_autounlock 开/关自动解锁并同步解锁会话");
 }
 
 // ---- 清理 ----

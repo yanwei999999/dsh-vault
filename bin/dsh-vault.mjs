@@ -10,6 +10,8 @@
  *   dsh-vault remove <name>       删除条目（需要主密码）
  *   dsh-vault passwd              修改主密码（需要旧密码）
  *   dsh-vault status              保险库状态（不需要密码）
+ *   dsh-vault autounlock          开启自动解锁（需要主密码，生成 auto.key 供 dsh 启动自动解锁）
+ *   dsh-vault autounlock --off    关闭自动解锁（删除 auto.key）
  *
  * 主密码不会回显、不会落盘。脚本/测试场景可用环境变量 DSH_VAULT_PASSWORD 提供
  * 主密码（注意：用环境变量意味着该密码会短暂存在于进程环境里）。
@@ -24,6 +26,9 @@ import {
   unlockVault,
   reencryptAll,
   encryptWithKey,
+  setAutoUnlockKey,
+  clearAutoUnlockKey,
+  loadAutoUnlockKey,
   vaultFilePath,
   vaultDir,
   machineKeyPath,
@@ -43,6 +48,8 @@ function printHelp() {
   dsh-vault remove <name>       删除条目（需要主密码）
   dsh-vault passwd              修改主密码（需要旧密码）
   dsh-vault status              保险库状态（不需要密码）
+  dsh-vault autounlock          开启自动解锁（需要主密码，生成 auto.key 供 dsh 启动自动解锁）
+  dsh-vault autounlock --off    关闭自动解锁（删除 auto.key）
   dsh-vault --help
 `);
 }
@@ -251,7 +258,27 @@ function cmdStatus() {
   process.stdout.write(`保险库目录：${vaultDir()}\n`);
   process.stdout.write(`保险库文件：${vaultFilePath()}${vault === null ? "（不存在）" : ""}\n`);
   process.stdout.write(`本机密钥文件：${machineKeyPath()}${loadMachineKey() === null ? "（不存在）" : ""}\n`);
+  process.stdout.write(`自动解锁：${loadAutoUnlockKey() === null ? "未开启" : "已开启（dsh 启动自动解锁）"}\n`);
   if (vault !== null) process.stdout.write(`已存条目：${vault.entries.length}\n`);
+}
+
+async function cmdAutoUnlock() {
+  const vault = readVault();
+  if (vault === null) {
+    process.stderr.write("保险库未初始化，请先运行 dsh-vault init。\n");
+    process.exit(1);
+  }
+  // `dsh-vault autounlock --off` 关闭
+  if (String(arg || "").trim() === "--off") {
+    clearAutoUnlockKey();
+    process.stdout.write("✔ 已关闭自动解锁（删除 auto.key），恢复手动解锁。\n");
+    return;
+  }
+  const pw = await masterPassword("主密码");
+  const p = setAutoUnlockKey(pw);
+  process.stdout.write(`✔ 已开启自动解锁：${p}\n`);
+  process.stdout.write("  之后 dsh 每次启动会自动解锁，agent 无需你手动。\n");
+  process.stdout.write("  关闭用：dsh-vault autounlock --off\n");
 }
 
 // ---------------------------------------------------------------------------
@@ -264,6 +291,7 @@ const main = async () => {
     case "get": await cmdGet(); break;
     case "remove": await cmdRemove(); break;
     case "passwd": await cmdPasswd(); break;
+    case "autounlock": await cmdAutoUnlock(); break;
     case "status": cmdStatus(); break;
     case "--help": case "-h": case undefined: printHelp(); break;
     default:
